@@ -135,8 +135,7 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
 
   
  
-  do mx = 0
-     do mz = 0
+
         do nx = mxmin, mxmax
            do nz = mzmin, mzmax
               do jx = -ngrid*ndis,ngrid*ndis
@@ -156,8 +155,7 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
               end do
            end do
         end do
-     end do
-  end do
+
   
 
 
