@@ -16,8 +16,9 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   double precision dx2,dz2,dxdz,dt2
   double precision, allocatable :: phix(:),phiz(:) ! non-zero values for phix, phiz
   double precision, allocatable :: phixderiv(:),phizderiv(:) ! and theirs derivatives
-  double precision, allocatable :: H1(:,:,:,:),H2(:,:,:,:) 
+  double precision, dimension (:,:,:,:), allocatable :: T0,H11,H13,H31,H33
   double precision, parameter :: pi = 3.141592653589793238462643383
+  double precision, parameter :: eps = 1.d-20 ! if the denominator is smaller than eps, we do not perform any division
  
 
   dt = 1.d0
@@ -46,10 +47,14 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   allocate(phixderiv(-ngrid*ndis:ngrid*ndis))
   allocate(phizderiv(-ngrid*ndis:ngrid*ndis))
   allocate(lam(-ngrid*ndis:ngrid*ndis,-ngrid*ndis:ngrid*ndis))
+  
 
-  allocate(H1(0:0,0:0,mxmin:mxmax,mzmin:mzmax))
-  allocate(H2(0:0,0:0,mxmin:mxmax,mzmin,mzmax))
 
+  allocate(T0(0:0,0:0,mxmin:mxmax,mzmin:mzmax))
+  allocate(H11(0:0,0:0,mxmin:mxmax,mzmin,mzmax))
+  allocate(H13(0:0,0:0,mxmin:mxmax,mzmin,mzmax))
+  allocate(H31(0:0,0:0,mxmin:mxmax,mzmin,mzmax))
+  allocate(H33(0:0,0:0,mxmin:mxmax,mzmin,mzmax))
 
   lam =1.d0
 
@@ -79,8 +84,12 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   phizderiv = 0.d0
 
 
-  H1 = 0.d0
-  H2 = 0.d0
+  T0 = 0.d0
+  H11 = 0.d0
+  H13 = 0.d0
+  H31 = 0.d0
+  H33 = 0.d0
+
 
   !trialfunction decides on sinc(true) or linear(false) interpolation
   !sincfunction = .true.
@@ -94,8 +103,13 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
      do ix=-ngrid*ndis, ngrid*ndis
 
         xx =dble(ix/ndis)*dx
-        phix(ix) = sin(pi*xx)/(pi*xx)
-        phixderiv(ix) = pi*cos(pi*xx)/(pi*xx) - sin(pi*xx)/(pi*xx*xx)
+        if(abs(xx)<eps) then
+           phix(ix) = 1.d0
+           phixderiv(ix) = 0.d0
+        elseif
+           phix(ix) = sin(pi*xx)/(pi*xx)
+           phixderiv(ix) = pi*cos(pi*xx)/(pi*xx) - sin(pi*xx)/(pi*xx*xx)
+        endif
         phiz(ix) = phix(ix)
         phizderiv(ix) =phixderiv(ix)
         
@@ -140,7 +154,6 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   endif
 
   
-<<<<<<< HEAD
 
   mx = 0
   mz = 0
@@ -149,7 +162,7 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   do nx = mxmin,mxmax
      do nz = mzmin,mzmax
         
-        H1(mx,mz,nx,nz) = 0.d0
+        T0(mx,mz,nx,nz) = 0.d0
         
         do inx = -ngrid*ndis,ngrid*ndis
            
@@ -161,46 +174,35 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
               ! the integrand of two phix functions has non-zero value if-and-only-if the 'small' coordinates for M and N (imx, inx) 
               ! have values inside -ngrid*ndis:ngrid:ndis (otherwise phix is not defined)
 
-              H1(mx,mz,nx,nz) = H1(mx,mz,nx,nz) + phix(inx)*phix(imx)*smalldx
+
+
+              do inz = -ngrid*ndis, ngrid*ndis
+                 imz = inz-(mz-nz)*ndis
+                 
+                 if((imz-(-ngrid*ndis)*(imz-(ngrid*ndis))).ge.0) then
+                    ! same story for phiz
+
+                    T0(mx,mz,nx,nz) = T0(mx,mz,nx,nz) + phix(inx)*phix(imx)*phiz(inz)*phiz(imz)*smalldx*smalldz
+
+                    ! NF : T0 should be doubled if the same phix and phiz are used for x and z component trial functions
+
+                    H11(mx,mz,nx,nz) = H11(mx,mz,nx,nz) + phixderiv(inx)*phixderiv(imx)*phiz(inz)*phiz(imz)*smalldx*smalldz
+                     
+                    ! TF will complete H13 ...
+
+                    
               
+                 endif
+              enddo
            endif
 
            
         enddo
      enddo
   enddo
-
-
-     
-     
-=======
- 
-  do mx = 0
-     do mz = 0
-        do nx = mxmin, mxmax
-           do nz = mzmin, mzmax
-              do jx = -ngrid*ndis,ngrid*ndis
-                 do jz = -ngrid*ndis,ngrid*ndis
-           
-                    H1(mx,mz,nx,nz)=(phix(jx,mx,mz)*phix(jx,nx,nz))+ &
-                         (phiz(jz,mx,mz)*phiz(jz,nx,nz))
-           
-           
-                    H2(mx,mz,nx,nz)=(phixderiv(jx,mx,mz)*phixderiv(jx,nx,nz))&
-                         +(phizderiv(jz,mx,mz)*phizderiv(jz,nx,nz))
-
-                    print *,'jx,jz',jx,jz,'H1', H1(mx,mz,nx,nz),&
-                         'H2', H2(mx,mz,nx,nz)
-           
-                 end do
-              end do
-           end do
-        end do
-     end do
-  end do
   
->>>>>>> 46585e63266fff4c30f033d120d469d1833f4d08
 
+     
 
 
 
