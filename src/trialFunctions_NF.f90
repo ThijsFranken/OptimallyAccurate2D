@@ -2,6 +2,7 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   implicit none
   integer nx,nz
   integer ix,iz
+  integer imx,imz,inx,inz ! 'small' coordinates inside M and N 
   integer jx,jz
   integer mx,mz,nx,nz ! for trial functions
   integer mxmax,mxmin,mzmax,mzmin ! the max and min values of mx,mz,nx,nz 
@@ -11,7 +12,7 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   double precision x,xx,z,zz
   !double precision rho(nx+1,nz+1),lam(nx+1,nz+1),mu(nx+1,nz+1)
   double precision, allocatable :: lam(:,:),mu(:,:),rho(:,:)
-  double precision dx,dz,dt
+  double precision dx,dz,dt,smalldx,smalldz
   double precision dx2,dz2,dxdz,dt2
   double precision, allocatable :: phix(:),phiz(:) ! non-zero values for phix, phiz
   double precision, allocatable :: phixderiv(:),phizderiv(:) ! and theirs derivatives
@@ -29,6 +30,11 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   ngrid = (npTF-1)/2
   ndis = 100
 
+
+  smalldx = dx/dble(ndis)
+  smalldz = dz/dble(ndis)
+
+
   mxmin = -npTF+1
   mxmax = npTF-1
 
@@ -40,9 +46,10 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   allocate(phixderiv(-ngrid*ndis:ngrid*ndis))
   allocate(phizderiv(-ngrid*ndis:ngrid*ndis))
   allocate(lam(-ngrid*ndis:ngrid*ndis,-ngrid*ndis:ngrid*ndis))
-  allocate(H1(0,0,mxmin:mxmax,mzmin:mzmax))
-  allocate(H2(0,0,mxmin:mxmax,mzmin,mzmax))
-  
+
+  allocate(H1(0:0,0:0,mxmin:mxmax,mzmin:mzmax))
+  allocate(H2(0:0,0:0,mxmin:mxmax,mzmin,mzmax))
+
 
   lam =1.d0
 
@@ -55,12 +62,12 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   !zm = 0.d0
 
 
-  ! I put mx, mz to be the centre (0,0)
+  ! I put nx, nz to be the centre (0,0)
 
-  mx = 0
-  mz = 0
+  nx = 0
+  nz = 0
 
-  ! then nx, nz have mxmin:mxmax and mzmin:mzmax
+  ! then mx, mz have mxmin:mxmax and mzmin:mzmax
 
 
   ! Initialising vectors
@@ -132,8 +139,41 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
      enddo
   endif
 
-
   
+<<<<<<< HEAD
+
+  mx = 0
+  mz = 0
+
+
+  do nx = mxmin,mxmax
+     do nz = mzmin,mzmax
+        
+        H1(mx,mz,nx,nz) = 0.d0
+        
+        do inx = -ngrid*ndis,ngrid*ndis
+           
+
+           imx = inx-(mx-nx)*ndis
+
+           
+           if((imx-(-ngrid*ndis)*(imx-(ngrid*ndis))).ge.0) then
+              ! the integrand of two phix functions has non-zero value if-and-only-if the 'small' coordinates for M and N (imx, inx) 
+              ! have values inside -ngrid*ndis:ngrid:ndis (otherwise phix is not defined)
+
+              H1(mx,mz,nx,nz) = H1(mx,mz,nx,nz) + phix(inx)*phix(imx)*smalldx
+              
+           endif
+
+           
+        enddo
+     enddo
+  enddo
+
+
+     
+     
+=======
  
 
         do nx = mxmin, mxmax
@@ -157,6 +197,7 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
         end do
 
   
+>>>>>>> 46585e63266fff4c30f033d120d469d1833f4d08
 
 
 
