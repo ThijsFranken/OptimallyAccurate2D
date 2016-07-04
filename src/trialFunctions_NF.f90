@@ -2,6 +2,7 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   implicit none
   integer nx,nz
   integer ix,iz
+  integer imx,imz,inx,inz ! 'small' coordinates inside M and N 
   integer jx,jz
   integer mx,mz,nx,nz ! for trial functions
   integer mxmax,mxmin,mzmax,mzmin ! the max and min values of mx,mz,nx,nz 
@@ -45,14 +46,10 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   allocate(phixderiv(-ngrid*ndis:ngrid*ndis))
   allocate(phizderiv(-ngrid*ndis:ngrid*ndis))
   allocate(lam(-ngrid*ndis:ngrid*ndis,-ngrid*ndis:ngrid*ndis))
-<<<<<<< HEAD
-  allocate(H1(mxmin:mxmax,mzmin:mzmax))
-  allocate(H2(mxmin:mxmax,mzmin:mzmax))
-=======
-  allocate(H1(0,0,mxmin:mxmax,mzmin:mzmax))
-  allocate(H2(0,0,mxmin:mxmax,mzmin,mzmax))
->>>>>>> 46585e63266fff4c30f033d120d469d1833f4d08
-  
+
+  allocate(H1(0:0,0:0,mxmin:mxmax,mzmin:mzmax))
+  allocate(H2(0:0,0:0,mxmin:mxmax,mzmin,mzmax))
+
 
   lam =1.d0
 
@@ -145,18 +142,30 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   
 <<<<<<< HEAD
 
-  nx = 0
-  nz = 0
+  mx = 0
+  mz = 0
 
 
-  do mx = mxmin,mxmax
-     do mz = mzmin,mzmax
+  do nx = mxmin,mxmax
+     do nz = mzmin,mzmax
         
-        H1(mx,mz) = 0.d0
+        H1(mx,mz,nx,nz) = 0.d0
         
-        do ix = -ngrid*ndis,ngrid*ndis
-           if(((ix-ndis).ge.-ngrid*ndis).and.((ix-ndis).le.ngrid*ndis))
-           H1(mx,mz) = H1(mx,mz) + phix(ix-ndis)*phix(ix)*
+        do inx = -ngrid*ndis,ngrid*ndis
+           
+
+           imx = inx-(mx-nx)*ndis
+
+           
+           if((imx-(-ngrid*ndis)*(imx-(ngrid*ndis))).ge.0) then
+              ! the integrand of two phix functions has non-zero value if-and-only-if the 'small' coordinates for M and N (imx, inx) 
+              ! have values inside -ngrid*ndis:ngrid:ndis (otherwise phix is not defined)
+
+              H1(mx,mz,nx,nz) = H1(mx,mz,nx,nz) + phix(inx)*phix(imx)*smalldx
+              
+           endif
+
+           
         enddo
      enddo
   enddo
