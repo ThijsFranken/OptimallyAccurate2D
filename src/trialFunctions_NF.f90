@@ -15,7 +15,7 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   double precision dx2,dz2,dxdz,dt2
   double precision, allocatable :: phix(:),phiz(:) ! non-zero values for phix, phiz
   double precision, allocatable :: phixderiv(:),phizderiv(:) ! and theirs derivatives
-  double precision, allocatable :: H1(:,:),H2(:,:)
+  double precision, allocatable :: H1(:,:,:,:),H2(:,:,:,:) 
   double precision, parameter :: pi = 3.141592653589793238462643383
  
 
@@ -45,8 +45,13 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   allocate(phixderiv(-ngrid*ndis:ngrid*ndis))
   allocate(phizderiv(-ngrid*ndis:ngrid*ndis))
   allocate(lam(-ngrid*ndis:ngrid*ndis,-ngrid*ndis:ngrid*ndis))
+<<<<<<< HEAD
   allocate(H1(mxmin:mxmax,mzmin:mzmax))
   allocate(H2(mxmin:mxmax,mzmin:mzmax))
+=======
+  allocate(H1(0,0,mxmin:mxmax,mzmin:mzmax))
+  allocate(H2(0,0,mxmin:mxmax,mzmin,mzmax))
+>>>>>>> 46585e63266fff4c30f033d120d469d1833f4d08
   
 
   lam =1.d0
@@ -99,12 +104,12 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
         
           
 
-        open(unit=8,file="phix.dat",form="formatted"&
-             ,status="replace",action="write")
+       ! open(unit=8,file="phix.dat",form="formatted"&
+       !      ,status="replace",action="write")
         
-        write(8,*)'phix', phix(ix,iz)
+       ! write(8,*)'phix', phix(ix,iz)
         
-        close(8)
+       ! close(8)
         
         
      enddo
@@ -138,6 +143,7 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   endif
 
   
+<<<<<<< HEAD
 
   nx = 0
   nz = 0
@@ -158,6 +164,33 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
 
      
      
+=======
+ 
+  do mx = 0
+     do mz = 0
+        do nx = mxmin, mxmax
+           do nz = mzmin, mzmax
+              do jx = -ngrid*ndis,ngrid*ndis
+                 do jz = -ngrid*ndis,ngrid*ndis
+           
+                    H1(mx,mz,nx,nz)=(phix(jx,mx,mz)*phix(jx,nx,nz))+ &
+                         (phiz(jz,mx,mz)*phiz(jz,nx,nz))
+           
+           
+                    H2(mx,mz,nx,nz)=(phixderiv(jx,mx,mz)*phixderiv(jx,nx,nz))&
+                         +(phizderiv(jz,mx,mz)*phizderiv(jz,nx,nz))
+
+                    print *,'jx,jz',jx,jz,'H1', H1(mx,mz,nx,nz),&
+                         'H2', H2(mx,mz,nx,nz)
+           
+                 end do
+              end do
+           end do
+        end do
+     end do
+  end do
+  
+>>>>>>> 46585e63266fff4c30f033d120d469d1833f4d08
 
 
 
