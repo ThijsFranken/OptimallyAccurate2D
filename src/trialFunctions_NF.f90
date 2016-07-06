@@ -40,6 +40,8 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
 
   mzmin = -npTF+1
   mzmax = npTF-1
+  
+
 
   allocate(phix(-ngrid*ndis:ngrid*ndis))
   allocate(phiz(-ngrid*ndis:ngrid*ndis))
@@ -83,12 +85,6 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   phizderiv = 0.d0
 
 
-  T0 = 0.d0
-  H11 = 0.d0
-  H13 = 0.d0
-  H31 = 0.d0
-  H33 = 0.d0
-
 
   !trialfunction decides on sinc(true) or linear(false) interpolation
   !sincfunction = .true.
@@ -111,6 +107,8 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
         endif
         phiz(ix) = phix(ix)
         phizderiv(ix) =phixderiv(ix)
+        
+
         
           
 
@@ -151,6 +149,9 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
         phizderiv(ix) = phixderiv(ix)
         
      enddo
+
+
+   
   endif
 
   
@@ -166,11 +167,18 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   ! end
  
 
+  
+  T0 = 0.d0
+  H11 = 0.d0
+  H13 = 0.d0
+  H31 = 0.d0
+  H33 = 0.d0
+
+
 
   do nx = mxmin,mxmax
      do nz = mzmin,mzmax
         
-        T0(mx,mz,nx,nz) = 0.d0
         
         do inx = -ngrid*ndis,ngrid*ndis-1
            
@@ -190,17 +198,28 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
                  if((imz-(-ngrid*ndis)*(imz-(ngrid*ndis-1))).le.0) then
                      ! same story for phiz
 
-                    T0(mx,mz,nx,nz) = T0(mx,mz,nx,nz) + 5.d-1*(phix(inx)+phix(inx+1))*5.d-1*(phix(imx)+phix(imx+1))*5.d-1*(phiz(inz)+phix(inz+1))*5.d-1(phiz(imz)+phiz(imz+1))*smalldx*smalldz
+                    T0(mx,mz,nx,nz) = T0(mx,mz,nx,nz)  &
+                         + 5.d-1*(phix(inx)+phix(inx+1))*5.d-1*(phix(imx)+phix(imx+1))   &
+                         *5.d-1*(phiz(inz)+phiz(inz+1))*5.d-1*(phiz(imz)+phiz(imz+1)) &
+                         *smalldx*smalldz
 
                     ! NF : T0 should be doubled if the same phix and phiz are used for x and z component trial functions
 
-                    H11(mx,mz,nx,nz) = H11(mx,mz,nx,nz) + 5.d-1*(phixderiv(inx)+phixderiv(inx+1))*5.d-1*(phixderiv(imx)+phixderiv(imx+1))*5.d-1*(phiz(inz)+phiz(inz+1))*5.d-1*(phiz(imz)+phiz(imz+1))*smalldx*smalldz 
+                    H11(mx,mz,nx,nz) = H11(mx,mz,nx,nz) + 5.d-1*(phixderiv(inx)+phixderiv(inx+1)) * &
+                         5.d-1*(phixderiv(imx)+phixderiv(imx+1))*5.d-1*(phiz(inz)+phiz(inz+1))* &
+                         5.d-1*(phiz(imz)+phiz(imz+1))*smalldx*smalldz 
 
-                    H13(mx,mz,nx,nz) = H13(mx,mz,nx,nz) + 5.d-1*(phizderiv(inz)+phizderiv(inz+1))*5.d-1*(phixderiv(imx)+phixderiv(imx+1))*5.d-1*(phix(inx)+phix(inx+1))*5.d-1*(phiz(imz)+phiz(imz+1))*smalldx*smalldz
+                    H13(mx,mz,nx,nz) = H13(mx,mz,nx,nz) + 5.d-1*(phizderiv(inz)+phizderiv(inz+1))* &
+                         5.d-1*(phixderiv(imx)+phixderiv(imx+1))*5.d-1*(phix(inx)+phix(inx+1))* &
+                         5.d-1*(phiz(imz)+phiz(imz+1))*smalldx*smalldz
 
-                    H31(mx,mz,nx,nz) = H31(mx,mz,nx,nz) + 5.d-1*(phixderiv(inx)+phixderiv(inx+1))*5.d-1*(phizderiv(imz)+phizderiv(imz+1))*5.d-1*(phiz(inz)+phiz(inz+1))*5.d-1*(phix(imx)+phix(imx+1))*smalldx*smalldz
+                    H31(mx,mz,nx,nz) = H31(mx,mz,nx,nz) + 5.d-1*(phixderiv(inx)+phixderiv(inx+1))* &
+                         5.d-1*(phizderiv(imz)+phizderiv(imz+1))*5.d-1*(phiz(inz)+phiz(inz+1))* &
+                         5.d-1*(phix(imx)+phix(imx+1))*smalldx*smalldz
 
-                    H33(mx,mz,nx,nz) = H33(mx,mz,nx,nz) + 5.d-1*(phizderiv(inz)+phizderiv(inx+1))*5.d-1*(phizderiv(imz)+phizderiv(imz+1))*5.d-1*(phix(inx)+phix(inx+1))*5.d-1*(phix(imx)+phix(imx+1))*smalldx*smalldz
+                    H33(mx,mz,nx,nz) = H33(mx,mz,nx,nz) + 5.d-1*(phizderiv(inz)+phizderiv(inx+1))* &
+                         5.d-1*(phizderiv(imz)+phizderiv(imz+1))*5.d-1*(phix(inx)+phix(inx+1)) &
+                         *5.d-1*(phix(imx)+phix(imx+1))*smalldx*smalldz
 
 
 !                    print *,'mx,mz,nx,nz', mx,mz,nx,nz,'T0', T0(mx,mz,nx,nz)
@@ -235,6 +254,9 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
        ,status="replace",action="write")
   
   
+  mx = 0
+  mz = 0
+
   do nx = mxmin,mxmax
      do nz = mzmin,mzmax
         write(8,*) 'mx,mz,nx,nz',mx,mz,nx,nz 
