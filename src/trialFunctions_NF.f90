@@ -1,14 +1,13 @@
 program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   implicit none
-  integer nx,nz
   integer ix,iz
-  integer imx,imz,inx,inz ! 'small' coordinates inside M and N 
   integer jx,jz
+  integer imx,imz,inx,inz ! 'small' coordinates inside M and N 
   integer mx,mz,nx,nz ! for trial functions
   integer mxmax,mxmin,mzmax,mzmin ! the max and min values of mx,mz,nx,nz 
   double precision xm,zm
   integer ndis,ngrid,npTF
-  logical, parameter :: sincfunction = .FALSE.
+  logical, parameter :: sincfunction = .TRUE.
   double precision x,xx,z,zz
   !double precision rho(nx+1,nz+1),lam(nx+1,nz+1),mu(nx+1,nz+1)
   double precision, allocatable :: lam(:,:),mu(:,:),rho(:,:)
@@ -51,10 +50,10 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
 
 
   allocate(T0(0:0,0:0,mxmin:mxmax,mzmin:mzmax))
-  allocate(H11(0:0,0:0,mxmin:mxmax,mzmin,mzmax))
-  allocate(H13(0:0,0:0,mxmin:mxmax,mzmin,mzmax))
-  allocate(H31(0:0,0:0,mxmin:mxmax,mzmin,mzmax))
-  allocate(H33(0:0,0:0,mxmin:mxmax,mzmin,mzmax))
+  allocate(H11(0:0,0:0,mxmin:mxmax,mzmin:mzmax))
+  allocate(H13(0:0,0:0,mxmin:mxmax,mzmin:mzmax))
+  allocate(H31(0:0,0:0,mxmin:mxmax,mzmin:mzmax))
+  allocate(H33(0:0,0:0,mxmin:mxmax,mzmin:mzmax))
 
   lam =1.d0
 
@@ -67,10 +66,10 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   !zm = 0.d0
 
 
-  ! I put nx, nz to be the centre (0,0)
-
-  nx = 0
-  nz = 0
+  ! I put mx, mz to be the centre (0,0)
+  mx = 0
+  mz = 0
+  
 
   ! then mx, mz have mxmin:mxmax and mzmin:mzmax
 
@@ -106,7 +105,7 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
         if(abs(xx)<eps) then
            phix(ix) = 1.d0
            phixderiv(ix) = 0.d0
-        elseif
+        elseif(abs(xx)>eps) then
            phix(ix) = sin(pi*xx)/(pi*xx)
            phixderiv(ix) = pi*cos(pi*xx)/(pi*xx) - sin(pi*xx)/(pi*xx*xx)
         endif
@@ -155,8 +154,7 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
 
   
 
-  mx = 0
-  mz = 0
+ 
 
 
   do nx = mxmin,mxmax
@@ -180,17 +178,35 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
                  imz = inz-(mz-nz)*ndis
                  
                  if((imz-(-ngrid*ndis)*(imz-(ngrid*ndis))).ge.0) then
-                    ! same story for phiz
+                     ! same story for phiz
 
                     T0(mx,mz,nx,nz) = T0(mx,mz,nx,nz) + phix(inx)*phix(imx)*phiz(inz)*phiz(imz)*smalldx*smalldz
 
                     ! NF : T0 should be doubled if the same phix and phiz are used for x and z component trial functions
 
                     H11(mx,mz,nx,nz) = H11(mx,mz,nx,nz) + phixderiv(inx)*phixderiv(imx)*phiz(inz)*phiz(imz)*smalldx*smalldz
-                     
-                    ! TF will complete H13 ...
 
-                    
+                    H13(mx,mz,nx,nz) = H13(mx,mz,nx,nz) + phizderiv(inz)*phixderiv(imx)*phix(inx)*phiz(imz)*smalldx*smalldz
+
+                    H31(mx,mz,nx,nz) = H31(mx,mz,nx,nz) + phixderiv(inx)*phizderiv(imz)*phiz(inz)*phix(imx)*smalldx*smalldz
+
+                    H33(mx,mz,nx,nz) = H33(mx,mz,nx,nz) + phizderiv(inz)*phizderiv(imz)*phix(inx)*phix(imx)*smalldx*smalldz
+
+
+!                    print *,'mx,mz,nx,nz', mx,mz,nx,nz,'T0', T0(mx,mz,nx,nz)
+!                    print *,'mx,mz,nx,nz', mx,mz,nx,nz,'H11', H11(mx,mz,nx,nz), 'H13', H13(mx,mz,nx,nz), 'H31', H31(mx,mz,nx,nz)&
+!                         , 'H33', H33(mx,mz,nx,nz)
+
+                     open(unit=8,file="coeffs.dat",form="formatted"&
+                          ,status="replace",action="write")
+
+                     write(8,*)'T0', T0(mx,mz,nx,nz)
+                     write(8,*)'H11', H11(mx,mz,nx,nz)
+                     write(8,*)'H13', H13(mx,mz,nx,nz)
+                     write(8,*)'H31', H31(mx,mz,nx,nz)
+                     write(8,*)'H33', H33(mx,mz,nx,nz)
+        
+                     close(8)
               
                  endif
               enddo
