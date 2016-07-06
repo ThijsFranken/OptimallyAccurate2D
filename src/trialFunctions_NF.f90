@@ -7,7 +7,7 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   integer mxmax,mxmin,mzmax,mzmin ! the max and min values of mx,mz,nx,nz 
   double precision xm,zm
   integer ndis,ngrid,npTF
-  logical, parameter :: sincfunction = .TRUE.
+  logical, parameter :: sincfunction = .false.
   double precision x,xx,z,zz
   !double precision rho(nx+1,nz+1),lam(nx+1,nz+1),mu(nx+1,nz+1)
   double precision, allocatable :: lam(:,:),mu(:,:),rho(:,:)
@@ -139,6 +139,7 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
         phixderiv(ix) = 1.d0/dx
         phizderiv(ix) = phixderiv(ix)
         
+     
      enddo
      
      do ix=0,ngrid*ndis
@@ -154,6 +155,15 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
 
   
 
+
+  
+  ! writing phix and phixderiv in 'fort.12'
+
+  do ix = -ngrid*ndis,ngrid*ndis
+     write(12,*) dble(ix/ndis)*dx,phix(ix),phixderiv(ix)
+  enddo
+  
+  ! end
  
 
 
@@ -162,51 +172,42 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
         
         T0(mx,mz,nx,nz) = 0.d0
         
-        do inx = -ngrid*ndis,ngrid*ndis
+        do inx = -ngrid*ndis,ngrid*ndis-1
            
 
            imx = inx-(mx-nx)*ndis
 
            
-           if((imx-(-ngrid*ndis)*(imx-(ngrid*ndis))).ge.0) then
+           if((imx-(-ngrid*ndis)*(imx-(ngrid*ndis-1))).le.0) then
               ! the integrand of two phix functions has non-zero value if-and-only-if the 'small' coordinates for M and N (imx, inx) 
               ! have values inside -ngrid*ndis:ngrid:ndis (otherwise phix is not defined)
 
 
 
-              do inz = -ngrid*ndis, ngrid*ndis
+              do inz = -ngrid*ndis, ngrid*ndis-1
                  imz = inz-(mz-nz)*ndis
                  
-                 if((imz-(-ngrid*ndis)*(imz-(ngrid*ndis))).ge.0) then
+                 if((imz-(-ngrid*ndis)*(imz-(ngrid*ndis-1))).le.0) then
                      ! same story for phiz
 
-                    T0(mx,mz,nx,nz) = T0(mx,mz,nx,nz) + phix(inx)*phix(imx)*phiz(inz)*phiz(imz)*smalldx*smalldz
+                    T0(mx,mz,nx,nz) = T0(mx,mz,nx,nz) + 5.d-1*(phix(inx)+phix(inx+1))*5.d-1*(phix(imx)+phix(imx+1))*5.d-1*(phiz(inz)+phix(inz+1))*5.d-1(phiz(imz)+phiz(imz+1))*smalldx*smalldz
 
                     ! NF : T0 should be doubled if the same phix and phiz are used for x and z component trial functions
 
-                    H11(mx,mz,nx,nz) = H11(mx,mz,nx,nz) + phixderiv(inx)*phixderiv(imx)*phiz(inz)*phiz(imz)*smalldx*smalldz
+                    H11(mx,mz,nx,nz) = H11(mx,mz,nx,nz) + 5.d-1*(phixderiv(inx)+phixderiv(inx+1))*5.d-1*(phixderiv(imx)+phixderiv(imx+1))*5.d-1*(phiz(inz)+phiz(inz+1))*5.d-1*(phiz(imz)+phiz(imz+1))*smalldx*smalldz 
 
-                    H13(mx,mz,nx,nz) = H13(mx,mz,nx,nz) + phizderiv(inz)*phixderiv(imx)*phix(inx)*phiz(imz)*smalldx*smalldz
+                    H13(mx,mz,nx,nz) = H13(mx,mz,nx,nz) + 5.d-1*(phizderiv(inz)+phizderiv(inz+1))*5.d-1*(phixderiv(imx)+phixderiv(imx+1))*5.d-1*(phix(inx)+phix(inx+1))*5.d-1*(phiz(imz)+phiz(imz+1))*smalldx*smalldz
 
-                    H31(mx,mz,nx,nz) = H31(mx,mz,nx,nz) + phixderiv(inx)*phizderiv(imz)*phiz(inz)*phix(imx)*smalldx*smalldz
+                    H31(mx,mz,nx,nz) = H31(mx,mz,nx,nz) + 5.d-1*(phixderiv(inx)+phixderiv(inx+1))*5.d-1*(phizderiv(imz)+phizderiv(imz+1))*5.d-1*(phiz(inz)+phiz(inz+1))*5.d-1*(phix(imx)+phix(imx+1))*smalldx*smalldz
 
-                    H33(mx,mz,nx,nz) = H33(mx,mz,nx,nz) + phizderiv(inz)*phizderiv(imz)*phix(inx)*phix(imx)*smalldx*smalldz
+                    H33(mx,mz,nx,nz) = H33(mx,mz,nx,nz) + 5.d-1*(phizderiv(inz)+phizderiv(inx+1))*5.d-1*(phizderiv(imz)+phizderiv(imz+1))*5.d-1*(phix(inx)+phix(inx+1))*5.d-1*(phix(imx)+phix(imx+1))*smalldx*smalldz
 
 
 !                    print *,'mx,mz,nx,nz', mx,mz,nx,nz,'T0', T0(mx,mz,nx,nz)
 !                    print *,'mx,mz,nx,nz', mx,mz,nx,nz,'H11', H11(mx,mz,nx,nz), 'H13', H13(mx,mz,nx,nz), 'H31', H31(mx,mz,nx,nz)&
 !                         , 'H33', H33(mx,mz,nx,nz)
 
-                     open(unit=8,file="coeffs.dat",form="formatted"&
-                          ,status="replace",action="write")
-
-                     write(8,*)'T0', T0(mx,mz,nx,nz)
-                     write(8,*)'H11', H11(mx,mz,nx,nz)
-                     write(8,*)'H13', H13(mx,mz,nx,nz)
-                     write(8,*)'H31', H31(mx,mz,nx,nz)
-                     write(8,*)'H33', H33(mx,mz,nx,nz)
-        
-                     close(8)
+                  
               
                  endif
               enddo
@@ -214,13 +215,41 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
 
            
         enddo
+
+
+
+        
+   
+      
+
+     
      enddo
+
+
   enddo
   
 
+
+
+  open(unit=8,file="coeffs.dat",form="formatted"&
+       ,status="replace",action="write")
+  
+  
+  do nx = mxmin,mxmax
+     do nz = mzmin,mzmax
+        write(8,*) 'mx,mz,nx,nz',mx,mz,nx,nz 
+        write(8,*)'T0', T0(mx,mz,nx,nz)
+        write(8,*)'H11', H11(mx,mz,nx,nz)
+        write(8,*)'H13', H13(mx,mz,nx,nz)
+        write(8,*)'H31', H31(mx,mz,nx,nz)
+        write(8,*)'H33', H33(mx,mz,nx,nz)
+        
+     enddo
+  enddo
+
      
 
-
+  close(8)
 
 
 
