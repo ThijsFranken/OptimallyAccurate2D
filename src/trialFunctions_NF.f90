@@ -35,11 +35,11 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   smalldz = dz/dble(ndis)
 
 
-  mxmin = -npTF+1
-  mxmax = npTF-1
+  mxmin = -npTF+2
+  mxmax = npTF-2
 
-  mzmin = -npTF+1
-  mzmax = npTF-1
+  mzmin = -npTF+2
+  mzmax = npTF-2
   
 
 
@@ -186,7 +186,7 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
            imx = inx-(mx-nx)*ndis
 
            
-           if((imx-(-ngrid*ndis)*(imx-(ngrid*ndis-1))).le.0) then
+           if((imx-(-ngrid*ndis))*(imx-(ngrid*ndis-1)).le.0) then
               ! the integrand of two phix functions has non-zero value if-and-only-if the 'small' coordinates for M and N (imx, inx) 
               ! have values inside -ngrid*ndis:ngrid:ndis (otherwise phix is not defined)
 
@@ -195,7 +195,7 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
               do inz = -ngrid*ndis, ngrid*ndis-1
                  imz = inz-(mz-nz)*ndis
                  
-                 if((imz-(-ngrid*ndis)*(imz-(ngrid*ndis-1))).le.0) then
+                 if((imz-(-ngrid*ndis))*(imz-(ngrid*ndis-1)).le.0) then
                      ! same story for phiz
 
                     T0(mx,mz,nx,nz) = T0(mx,mz,nx,nz)  &
