@@ -1,0 +1,15 @@
+\documentclass{memoir}
+
+\begin{document}
+
+\title{Equation of Motion}
+\maketitle
+
+\begin{equation*}
+$$(\rho\omega^2-k_x^2\mu)u+\frac{{d}}{{dz}}\bigg(\mu\frac{{du}}{{dz}}\bigg)= -f$$
+\end{equation*}
+
+
+\end{document}
+
+

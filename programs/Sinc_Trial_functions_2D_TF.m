@@ -21,6 +21,9 @@ dxdz = dx * dz;
 mx=2;
 mz=2;
 
+nx=0;
+nz=0;
+
 pi=3.141592653589793238;
 %xm1 = xm + deltax;
                              % for discretizing steps
@@ -146,12 +149,12 @@ mx=2;
 mz=2;
 
 markers = zeros(2*ngrid*ndis+1,2*ngrid*ndis+1,mxmax-mxmin+1,mzmax-mzmin+1);
-% nx, nz are 1
+% mx, mz centered on 2. Integrated over nx, nz:
+
 for nx = mxmin:mxmax;
     for nz = mxmin:mxmax;
         
         T(mx,mz,nx,nz)=0;
-        
         H11(mx,mz,nx,nz)=0;
         H13(mx,mz,nx,nz)=0;
         H31(mx,mz,nx,nz)=0;

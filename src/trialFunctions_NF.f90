@@ -1,5 +1,6 @@
 program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   implicit none
+  integer i
   integer ix,iz
   integer jx,jz
   integer imx,imz,inx,inz ! 'small' coordinates inside M and N 
@@ -20,7 +21,7 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   double precision, parameter :: eps = 1.d-20 ! if the denominator is smaller than eps, we do not perform any division
  
 
-  dt = 1.d0
+ ! dt = 1.d0
   dx = 1.d0
   dz = 1.d0
 
@@ -40,7 +41,7 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
 
   mzmin = -npTF+2
   mzmax = npTF-2
-  
+
 
 
   allocate(phix(-ngrid*ndis:ngrid*ndis))
@@ -57,15 +58,15 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   allocate(H31(0:0,0:0,mxmin:mxmax,mzmin:mzmax))
   allocate(H33(0:0,0:0,mxmin:mxmax,mzmin:mzmax))
 
-  lam =1.d0
+ ! lam =1.d0
 
-  dt2 = dt * dt
-  dx2 = dx * dx
-  dz2 = dz * dz
-  dxdz = dx * dz
+ ! dt2 = dt * dt
+ ! dx2 = dx * dx
+ ! dz2 = dz * dz
+ ! dxdz = dx * dz
   
-  !xm = 0.d0
-  !zm = 0.d0
+  xm = 0.d0
+  zm = 0.d0
 
 
   ! I put mx, mz to be the centre (0,0)
@@ -129,24 +130,30 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
 
      ! B-splines (for the moment only for 3 points so it's not correct for 5-, 7- point schemes)
 
-     do ix=-ngrid*ndis,0
+     do i=-ngrid*ndis,0
         
-        x=dble(ix/ndis)*dx
-        phix(ix) = (x+dx)/dx
-        phiz(ix) = phix(ix)
-        phixderiv(ix) = 1.d0/dx
-        phizderiv(ix) = phixderiv(ix)
+        x = xm + dble(i/ndis)*dx
+        phix(i) = (x+dx)/dx
+        phixderiv(i) = 1.d0/dx
+
+        z = zm + dble(i/ndis)*dz
+        phiz(i) = (z+dz)/dz
+        phizderiv(i) = 1.d0/dz
+        
         
      
      enddo
      
-     do ix=0,ngrid*ndis
+     do i=0,ngrid*ndis
       
-        x=dble(ix/ndis)*dx
-        phix(ix) = (-x+dx)/dx
-        phiz(ix) = phix(ix)
-        phixderiv(ix) = -1.d0/dx
-        phizderiv(ix) = phixderiv(ix)
+        x = xm + dble(i/ndis)*dx
+        phix(i) = (-x+dx)/dx
+        phixderiv(i) = -1.d0/dx
+
+        z = z+ dble(i/ndis)*dz
+        phiz(i) = (-z+dz)/dz
+        phizderiv(i) = -1.d0/dz
+        
         
      enddo
 
@@ -160,25 +167,26 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
   
   ! writing phix and phixderiv in 'fort.12'
 
-  do ix = -ngrid*ndis,ngrid*ndis
-     write(12,*) dble(ix/ndis)*dx,phix(ix),phixderiv(ix)
+  do i = -ngrid*ndis,ngrid*ndis
+     write(12,*) dble(i/ndis)*dx,phix(i),phixderiv(i)
   enddo
   
   ! end
  
 
   
-  T0 = 0.d0
-  H11 = 0.d0
-  H13 = 0.d0
-  H31 = 0.d0
-  H33 = 0.d0
+   T0(mx,mz,nx,mz) = 0.d0
+   H11(mx,mz,nx,mz) = 0.d0
+   H13(mx,mz,nx,mz) = 0.d0
+   H31(mx,mz,nx,mz) = 0.d0
+   H33(mx,mz,nx,mz) = 0.d0
 
 
 
   do nx = mxmin,mxmax
      do nz = mzmin,mzmax
         
+
         
         do inx = -ngrid*ndis,ngrid*ndis-1
            
@@ -186,7 +194,7 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
            imx = inx-(mx-nx)*ndis
 
            
-           if((imx-(-ngrid*ndis))*(imx-(ngrid*ndis-1)).le.0) then
+           if((imx-(-ngrid*ndis))*(imx-(ngrid*ndis-1))<=0) then
               ! the integrand of two phix functions has non-zero value if-and-only-if the 'small' coordinates for M and N (imx, inx) 
               ! have values inside -ngrid*ndis:ngrid:ndis (otherwise phix is not defined)
 
@@ -195,7 +203,7 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
               do inz = -ngrid*ndis, ngrid*ndis-1
                  imz = inz-(mz-nz)*ndis
                  
-                 if((imz-(-ngrid*ndis))*(imz-(ngrid*ndis-1)).le.0) then
+                 if((imz-(-ngrid*ndis))*(imz-(ngrid*ndis-1))<=0) then
                      ! same story for phiz
 
                     T0(mx,mz,nx,nz) = T0(mx,mz,nx,nz)  &
@@ -207,7 +215,7 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
 
                     H11(mx,mz,nx,nz) = H11(mx,mz,nx,nz) + 5.d-1*(phixderiv(inx)+phixderiv(inx+1)) * &
                          5.d-1*(phixderiv(imx)+phixderiv(imx+1))*5.d-1*(phiz(inz)+phiz(inz+1))* &
-                         5.d-1*(phiz(imz)+phiz(imz+1))*smalldx*smalldz 
+                         5.d-1*(phiz(imz)+phiz(imz+1))*smalldx*smalldz
 
                     H13(mx,mz,nx,nz) = H13(mx,mz,nx,nz) + 5.d-1*(phizderiv(inz)+phizderiv(inz+1))* &
                          5.d-1*(phixderiv(imx)+phixderiv(imx+1))*5.d-1*(phix(inx)+phix(inx+1))* &
@@ -226,7 +234,29 @@ program SincInterpolation !( nx,nz,rho,lam,mu,dx,dz,dt )
 !                    print *,'mx,mz,nx,nz', mx,mz,nx,nz,'H11', H11(mx,mz,nx,nz), 'H13', H13(mx,mz,nx,nz), 'H31', H31(mx,mz,nx,nz)&
 !                         , 'H33', H33(mx,mz,nx,nz)
 
-                  
+!
+!                     T0(mx,mz,nx,nz) = T0(mx,mz,nx,nz)  &
+!                         + 5.d-1*phix(inx)*5.d-1*phix(imx)   &
+!                         *5.d-1*phiz(inz)*5.d-1*phiz(imz) &
+!                         *smalldx*smalldz
+
+
+!                    H11(mx,mz,nx,nz) = H11(mx,mz,nx,nz) + 5.d-1*phixderiv(inx)* &
+!                         5.d-1*phixderiv(imx)*5.d-1*phiz(inz)* &
+!                         5.d-1*phiz(imz)*smalldx*smalldz 
+
+!                    H13(mx,mz,nx,nz) = H13(mx,mz,nx,nz) + 5.d-1*phizderiv(inz)* &
+!                         5.d-1*phixderiv(imx)*5.d-1*phix(inx)* &
+!                         5.d-1*phiz(imz)*smalldx*smalldz
+
+ !                   H31(mx,mz,nx,nz) = H31(mx,mz,nx,nz) + 5.d-1*phixderiv(inx)* &
+                    !
+!                   5.d-1*phizderiv(imz)*5.d-1*phiz(inz)* &
+!                         5.d-1*phix(imx)*smalldx*smalldz
+
+!                    H33(mx,mz,nx,nz) = H33(mx,mz,nx,nz) + 5.d-1*phizderiv(inz)* &
+!                         5.d-1*phizderiv(imz)*5.d-1*phix(inx) &
+!                         *5.d-1*phix(imx)*smalldx*smalldz
               
                  endif
               enddo
